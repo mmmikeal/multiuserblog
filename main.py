@@ -77,10 +77,11 @@ class BlogHandler(webapp2.RequestHandler):
         uid = self.read_secure_cookie('user_id')
         self.user = uid and User.by_id(int(uid))
 
+
     # renders a post onto webpage
-    def render_post(response, post):
-        response.out.write('<b>' + post.subject + '</b><br>')
-        response.out.write(post.content)
+def render_post(response, post):
+    response.out.write('<b>' + post.subject + '</b><br>')
+    response.out.write(post.content)
 
 
 # homepage for a user
@@ -88,23 +89,27 @@ class MainPage(BlogHandler):
     def get(self):
         self.write('Hello, Udacity!')
 
-    # make a salt for a user
-    def make_salt(length=5):
-        return ''.join(random.choice(letters) for x in xrange(length))
 
-    # makes a password hash for a user account
-    def make_pw_hash(name, pw, salt=None):
-        if not salt:
-            salt = make_salt()
-        h = hashlib.sha256(name + pw + salt).hexdigest()
-        return '%s,%s' % (salt, h)
+# make a salt for a user
+def make_salt(length=5):
+    return ''.join(random.choice(letters) for x in xrange(length))
 
-    def valid_pw(name, password, h):
-        salt = h.split(',')[0]
-        return h == make_pw_hash(name, password, salt)
 
-    def users_key(group='default'):
-        return db.Key.from_path('users', group)
+# makes a password hash for a user account
+def make_pw_hash(name, pw, salt=None):
+    if not salt:
+        salt = make_salt()
+    h = hashlib.sha256(name + pw + salt).hexdigest()
+    return '%s,%s' % (salt, h)
+
+
+def valid_pw(name, password, h):
+    salt = h.split(',')[0]
+    return h == make_pw_hash(name, password, salt)
+
+
+def users_key(group='default'):
+    return db.Key.from_path('users', group)
 
 
 # Users have a name, encryptedPW, and email
@@ -288,7 +293,7 @@ class Register(Signup):
         u = User.by_name(self.username)
         if u:
             msg = 'That user already exists.'
-            self.render('signup-form.html', error_username = msg)
+            self.render('signup-form.html', error_username=msg)
         else:
             u = User.register(self.username, self.password, self.email)
             u.put()
@@ -336,34 +341,35 @@ class Welcome(BlogHandler):
         else:
             self.redirect('/unit2/signup')
 
-# class EditPost(BlogHandler)
-#     if not (self.user):
-#         self.error(404)
-#     else
-#         def get(self, post_id):
-#             ## post_id is url
-#             key = db.Key.from_path('Post', int(post_id), parent=blog_key())
-#             ## store post from database(key)
-#             post = db.get(key)
-#             subject = post.subject
-#             content = post.subject
-#             self.render("editpost.html", subject=subject, content=content)
 
-#         def post(self, post_id):
-#             subject = self.request.get('subject')
-#             content = self.request.get('content')
+class EditPost(BlogHandler):
+    if not (self.user):
+        self.error(404)
+    else:
+        def get(self, post_id):
+            # post_id is url
+            key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+            # store post from database(key)
+            post = db.get(key)
+            subject = post.subject
+            content = post.subject
+            self.render("editpost.html", subject=subject, content=content)
 
-#             if subject and content:
-#                 key = db.Key.from_path('Post', int(post_id), parent=blog_key())
-#                 post = db.get(key)
-#                 post.subject = subject
-#                 post.content = content
-#                 post.put() ## does this update existing data or create new data?
-#                 self.render("permalink.html", post = post)
-#                 #self.redirect('/blog/%s' % str(p.key().id()))
-#             else:
-#                 error = "subject and content, please!"
-#                 self.render("editpost.html", subject=subject, content=content, error=error)
+        def post(self, post_id):
+            subject = self.request.get('subject')
+            content = self.request.get('content')
+
+            if subject and content:
+                key = db.Key.from_path('Post', int(post_id), parent=blog_key())
+                post = db.get(key)
+                post.subject = subject
+                post.content = content
+                post.put() # does this update existing data or create new data?
+                self.render("permalink.html", post=post)
+                # self.redirect('/blog/%s' % str(p.key().id()))
+            else:
+                error = "subject and content, please!"
+                self.render("editpost.html", subject=subject, content=content, error=error)
 
 
 app = webapp2.WSGIApplication([('/', MainPage),
